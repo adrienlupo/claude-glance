@@ -29,8 +29,8 @@ enum ITerm {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
             process.arguments = ["-e", script]
-            process.standardOutput = nil
-            process.standardError = nil
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
             try? process.run()
             process.waitUntilExit()
         }
