@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: FloatingPanel!
     private var statusItem: NSStatusItem!
     private let store = SessionStore()
+    private var iconCache: [NSColor: NSImage] = [:]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let contentView = NSHostingView(
@@ -97,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func makeStatusIcon(color: NSColor) -> NSImage {
+        if let cached = iconCache[color] { return cached }
         let size: CGFloat = 18
         let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
             let center = CGPoint(x: size / 2, y: size / 2)
@@ -149,6 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return true
         }
         image.isTemplate = false
+        iconCache[color] = image
         return image
     }
 

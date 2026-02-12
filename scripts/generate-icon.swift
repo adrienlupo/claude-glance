@@ -2,7 +2,7 @@
 
 import AppKit
 
-let outputDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ClaudeNotifHubIcon.iconset")
+let outputDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ClaudeGlanceIcon.iconset")
 try? FileManager.default.removeItem(at: outputDir)
 try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
@@ -113,7 +113,7 @@ for (name, size) in sizes {
 // Convert iconset to icns using iconutil
 let scriptDir = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
 let resourcesDir = scriptDir.deletingLastPathComponent()
-    .appendingPathComponent("ClaudeNotifHub")
+    .appendingPathComponent("ClaudeGlance")
     .appendingPathComponent("Resources")
 let icnsPath = resourcesDir.appendingPathComponent("AppIcon.icns").path
 

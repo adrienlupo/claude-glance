@@ -2,7 +2,7 @@
 
 SETTINGS="$HOME/.claude/settings.json"
 HOOK_CMD="bash $HOME/.claude-glance/hooks/hook.sh"
-EVENTS=("SessionStart" "UserPromptSubmit" "PreToolUse" "Stop" "Notification" "PostToolUseFailure")
+EVENTS=("SessionStart" "UserPromptSubmit" "PreToolUse" "Stop" "Notification")
 
 mkdir -p "$(dirname "$SETTINGS")"
 if [ ! -f "$SETTINGS" ]; then

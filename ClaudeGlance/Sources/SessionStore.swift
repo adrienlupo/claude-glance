@@ -28,6 +28,8 @@ final class SessionStore {
     private var fileDescriptor: Int32 = -1
     private var dispatchSource: DispatchSourceFileSystemObject?
     private var ttyMonitors: [String: DispatchSourceFileSystemObject] = [:]
+    private var healthCheckTimer: DispatchSourceTimer?
+    private var debounceWork: DispatchWorkItem?
 
     var worstStatus: SessionStatus {
         sessions
@@ -52,15 +54,19 @@ final class SessionStore {
         )
         loadSessions()
         startWatching()
+        startHealthCheck()
     }
 
     deinit {
         dispatchSource?.cancel()
+        healthCheckTimer?.cancel()
+        debounceWork?.cancel()
         ttyMonitors.values.forEach { $0.cancel() }
     }
 
     private func isSessionAlive(_ json: [String: Any]) -> Bool {
-        guard let tty = json["tty"] as? String, !tty.isEmpty, tty != "??" else {
+        guard let tty = json["tty"] as? String, !tty.isEmpty, tty != "??",
+              tty.allSatisfy({ $0.isLetter || $0.isNumber }) else {
             return false
         }
         guard Darwin.access("/dev/\(tty)", F_OK) == 0 else {
@@ -93,7 +99,7 @@ final class SessionStore {
             let timestamp = Date(timeIntervalSince1970: ts)
             let age = now.timeIntervalSince(timestamp)
 
-            if age > 1800 {
+            if age > 1800 { // 30 minutes
                 try? FileManager.default.removeItem(at: file)
                 continue
             }
@@ -166,7 +172,13 @@ final class SessionStore {
         )
 
         dispatchSource?.setEventHandler { [weak self] in
-            self?.loadSessions()
+            guard let self else { return }
+            self.debounceWork?.cancel()
+            let work = DispatchWorkItem { [weak self] in
+                self?.loadSessions()
+            }
+            self.debounceWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
         }
 
         dispatchSource?.setCancelHandler { [weak self] in
@@ -176,6 +188,27 @@ final class SessionStore {
         }
 
         dispatchSource?.resume()
+    }
+
+    private func startHealthCheck() {
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 1, repeating: .milliseconds(500))
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            for i in (0..<self.sessions.count).reversed() {
+                let s = self.sessions[i]
+                let rc = s.pid > 0 ? Darwin.kill(s.pid, 0) : -1
+                let alive = rc == 0 || (rc == -1 && errno == EPERM)
+                if !alive {
+                    self.ttyMonitors.removeValue(forKey: s.id)?.cancel()
+                    self.sessions.remove(at: i)
+                    let file = self.sessionsDirectory.appendingPathComponent("\(s.id).json")
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+        }
+        timer.resume()
+        healthCheckTimer = timer
     }
 
 }
