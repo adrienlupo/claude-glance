@@ -197,8 +197,8 @@ final class SessionStore {
             guard let self else { return }
             for i in (0..<self.sessions.count).reversed() {
                 let s = self.sessions[i]
-                let alive = s.pid > 0
-                    && (Darwin.kill(s.pid, 0) == 0 || (Darwin.kill(s.pid, 0) == -1 && errno == EPERM))
+                let rc = s.pid > 0 ? Darwin.kill(s.pid, 0) : -1
+                let alive = rc == 0 || (rc == -1 && errno == EPERM)
                 if !alive {
                     self.ttyMonitors.removeValue(forKey: s.id)?.cancel()
                     self.sessions.remove(at: i)
