@@ -145,7 +145,6 @@ final class SessionStore {
         source.setEventHandler { [weak self] in
             self?.removeSession(sessionId)
         }
-        source.setCancelHandler { }
         processMonitors[sessionId] = source
         source.resume()
     }
