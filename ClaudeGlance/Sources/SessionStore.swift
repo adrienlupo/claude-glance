@@ -27,7 +27,7 @@ final class SessionStore {
     private let sessionsDirectory: URL
     private var fileDescriptor: Int32 = -1
     private var dispatchSource: DispatchSourceFileSystemObject?
-    private var ttyMonitors: [String: DispatchSourceFileSystemObject] = [:]
+    private var processMonitors: [String: DispatchSourceProcess] = [:]
     private var healthCheckTimer: DispatchSourceTimer?
     private var debounceWork: DispatchWorkItem?
 
@@ -61,22 +61,22 @@ final class SessionStore {
         dispatchSource?.cancel()
         healthCheckTimer?.cancel()
         debounceWork?.cancel()
-        ttyMonitors.values.forEach { $0.cancel() }
+        processMonitors.values.forEach { $0.cancel() }
     }
 
     private func isSessionAlive(_ json: [String: Any]) -> Bool {
-        guard let tty = json["tty"] as? String, !tty.isEmpty, tty != "??",
-              tty.allSatisfy({ $0.isLetter || $0.isNumber }) else {
-            return false
-        }
-        guard Darwin.access("/dev/\(tty)", F_OK) == 0 else {
-            return false
-        }
         guard let pid = json["pid"] as? Int, pid > 0 else {
             return false
         }
         let result = Darwin.kill(Int32(pid), 0)
-        return result == 0 || (result == -1 && errno == EPERM)
+        guard result == 0 || (result == -1 && errno == EPERM) else {
+            return false
+        }
+        if let tty = json["tty"] as? String, !tty.isEmpty, tty != "??",
+           tty.allSatisfy({ $0.isLetter || $0.isNumber }) {
+            return Darwin.access("/dev/\(tty)", F_OK) == 0
+        }
+        return true
     }
 
     private func loadSessions() {
@@ -99,7 +99,7 @@ final class SessionStore {
             let timestamp = Date(timeIntervalSince1970: ts)
             let age = now.timeIntervalSince(timestamp)
 
-            if age > 1800 { // 30 minutes
+            if age > 1800 {
                 try? FileManager.default.removeItem(at: file)
                 continue
             }
@@ -122,43 +122,41 @@ final class SessionStore {
                 tty: tty
             )
             loaded.append(session)
-            monitorTTY(session)
+            monitorProcess(session)
         }
 
         let activeIds = Set(loaded.map(\.id))
-        for id in ttyMonitors.keys where !activeIds.contains(id) {
-            ttyMonitors.removeValue(forKey: id)?.cancel()
+        for id in processMonitors.keys where !activeIds.contains(id) {
+            processMonitors.removeValue(forKey: id)?.cancel()
         }
 
         sessions = loaded.sorted { $0.projectName < $1.projectName }
     }
 
-    private func monitorTTY(_ session: SessionInfo) {
-        guard !session.tty.isEmpty, ttyMonitors[session.id] == nil else { return }
+    private func monitorProcess(_ session: SessionInfo) {
+        guard session.pid > 0, processMonitors[session.id] == nil else { return }
 
-        let fd = Darwin.open("/dev/\(session.tty)", O_EVTONLY)
-        guard fd >= 0 else { return }
-
-        let source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: fd,
-            eventMask: [.delete, .revoke],
+        let source = DispatchSource.makeProcessSource(
+            identifier: session.pid,
+            eventMask: .exit,
             queue: .main
         )
         let sessionId = session.id
         source.setEventHandler { [weak self] in
-            guard let self else { return }
-            self.ttyMonitors.removeValue(forKey: sessionId)?.cancel()
-            if let index = self.sessions.firstIndex(where: { $0.id == sessionId }) {
-                self.sessions.remove(at: index)
-                let file = self.sessionsDirectory.appendingPathComponent("\(sessionId).json")
-                try? FileManager.default.removeItem(at: file)
-            }
+            self?.removeSession(sessionId)
         }
-        source.setCancelHandler {
-            Darwin.close(fd)
-        }
-        ttyMonitors[sessionId] = source
+        source.setCancelHandler { }
+        processMonitors[sessionId] = source
         source.resume()
+    }
+
+    private func removeSession(_ sessionId: String) {
+        processMonitors.removeValue(forKey: sessionId)?.cancel()
+        if let index = sessions.firstIndex(where: { $0.id == sessionId }) {
+            sessions.remove(at: index)
+            let file = sessionsDirectory.appendingPathComponent("\(sessionId).json")
+            try? FileManager.default.removeItem(at: file)
+        }
     }
 
     private func startWatching() {
@@ -200,10 +198,7 @@ final class SessionStore {
                 let rc = s.pid > 0 ? Darwin.kill(s.pid, 0) : -1
                 let alive = rc == 0 || (rc == -1 && errno == EPERM)
                 if !alive {
-                    self.ttyMonitors.removeValue(forKey: s.id)?.cancel()
-                    self.sessions.remove(at: i)
-                    let file = self.sessionsDirectory.appendingPathComponent("\(s.id).json")
-                    try? FileManager.default.removeItem(at: file)
+                    self.removeSession(s.id)
                 }
             }
         }

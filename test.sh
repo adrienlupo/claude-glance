@@ -30,5 +30,31 @@ echo ""
 echo "=== Phase 4: Cleanup ==="
 rm -f "$DIR"/test*.json
 echo "Test sessions removed"
+
+echo ""
+echo "=== Phase 5: Process exit cleanup verification ==="
+sleep 1 &
+BG_PID=$!
+SESSION_ID="cleanup-test-$$"
+jq -n --arg cwd "/tmp/cleanup-test" --arg status "busy" --argjson ts "$(date +%s)" --argjson pid "$BG_PID" --arg tty "" \
+    '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$DIR/${SESSION_ID}.json"
+echo "Created session file for background process (PID=$BG_PID)"
+echo "Waiting for process to exit..."
+wait $BG_PID
+echo "Process exited. Waiting up to 5s for cleanup..."
+ELAPSED=0
+while [ $ELAPSED -lt 5 ]; do
+    if [ ! -f "$DIR/${SESSION_ID}.json" ]; then
+        echo "PASS: Session file cleaned up after ${ELAPSED}s"
+        break
+    fi
+    sleep 1
+    ELAPSED=$((ELAPSED + 1))
+done
+if [ -f "$DIR/${SESSION_ID}.json" ]; then
+    echo "INFO: Session file still exists (app may not be running). Cleaning up manually."
+    rm -f "$DIR/${SESSION_ID}.json"
+fi
+
 echo ""
 echo "Done."
