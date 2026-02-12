@@ -28,8 +28,6 @@ final class FloatingPanel: NSPanel {
         visualEffect.wantsLayer = true
         visualEffect.layer?.cornerRadius = 12
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.borderWidth = 0
-        visualEffect.layer?.borderColor = NSColor.clear.cgColor
         visualEffect.frame = NSRect(x: 0, y: 0, width: 300, height: 36)
         visualEffect.autoresizingMask = [.width, .height]
 

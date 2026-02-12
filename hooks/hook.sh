@@ -2,6 +2,7 @@
 
 DIR="$HOME/.claude-glance/sessions"
 mkdir -p "$DIR"
+chmod 700 "$DIR"
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
@@ -18,14 +19,6 @@ case "$EVENT" in
     PreToolUse)         STATUS="busy" ;;
     Stop)               STATUS="idle" ;;
     Notification)       STATUS="waiting" ;;
-    PostToolUseFailure)
-        IS_INTERRUPT=$(echo "$INPUT" | jq -r '.is_interrupt // false')
-        if [ "$IS_INTERRUPT" = "true" ]; then
-            STATUS="interrupted"
-        else
-            exit 0
-        fi
-        ;;
     *)                  exit 0 ;;
 esac
 
@@ -34,13 +27,19 @@ TMP="$DIR/${SESSION_ID}.tmp"
 TARGET="$DIR/${SESSION_ID}.json"
 
 PID="${PPID:-0}"
-TTY=$(ps -o tty= -p $PPID 2>/dev/null | tr -d ' ')
+TTY=$(ps -o tty= -p "$PPID" 2>/dev/null | tr -d ' ')
 
 for f in "$DIR"/*.json; do
     [ "$f" = "$TARGET" ] && continue
-    [ -f "$f" ] && OLD_PID=$(jq -r '.pid // 0' "$f" 2>/dev/null) && [ "$OLD_PID" = "$PID" ] && rm -f "$f"
+    if [ -f "$f" ]; then
+        OLD_PID=$(jq -r '.pid // 0' "$f" 2>/dev/null)
+        if [ "$OLD_PID" = "$PID" ]; then
+            rm -f "$f"
+        fi
+    fi
 done
 
+umask 077
 jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" --argjson pid "$PID" --arg tty "$TTY" \
     '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$TMP"
 mv "$TMP" "$TARGET"
