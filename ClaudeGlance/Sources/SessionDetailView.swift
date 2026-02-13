@@ -53,12 +53,17 @@ struct SessionDetailView: View {
 private struct ContextBar: View {
     let percentage: Int?
 
+    private static let barWidth: CGFloat = 60
+    private static let colorRed = Color(red: 1.0, green: 0.271, blue: 0.227)
+    private static let colorYellow = Color(red: 0.988, green: 0.816, blue: 0.145)
+    private static let colorGreen = Color(red: 0.204, green: 0.780, blue: 0.349)
+
     private var barColor: Color {
         guard let pct = percentage else { return .clear }
         switch pct {
-        case 80...: return Color(red: 1.0, green: 0.271, blue: 0.227)
-        case 50..<80: return Color(red: 0.988, green: 0.816, blue: 0.145)
-        default: return Color(red: 0.204, green: 0.780, blue: 0.349)
+        case 80...: return Self.colorRed
+        case 50..<80: return Self.colorYellow
+        default: return Self.colorGreen
         }
     }
 
@@ -67,11 +72,11 @@ private struct ContextBar: View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 1.5)
                     .fill(Color.primary.opacity(0.12))
-                    .frame(width: 60, height: 3)
+                    .frame(width: Self.barWidth, height: 3)
                 if let pct = percentage, pct > 0 {
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(barColor)
-                        .frame(width: 60 * CGFloat(pct) / 100, height: 3)
+                        .frame(width: Self.barWidth * CGFloat(min(pct, 100)) / 100, height: 3)
                 }
             }
 
