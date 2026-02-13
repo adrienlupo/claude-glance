@@ -29,7 +29,6 @@ install: bundle
 	@echo "Installed ClaudeGlance.app to /Applications/"
 	cp hooks/hook.sh $(INSTALL_DIR)/hooks/
 	chmod +x $(INSTALL_DIR)/hooks/hook.sh
-	bash hooks/install.sh
 	@echo ""
 
 clean:
