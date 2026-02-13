@@ -4,8 +4,7 @@ enum ITerm {
     private static let bundleID = "com.googlecode.iterm2"
 
     static func focusSession(tty: String) {
-        guard !tty.isEmpty, tty != "??",
-              tty.allSatisfy({ $0.isLetter || $0.isNumber }) else { return }
+        guard tty.isValidTTY else { return }
         guard NSRunningApplication.runningApplications(
             withBundleIdentifier: bundleID
         ).first != nil else { return }

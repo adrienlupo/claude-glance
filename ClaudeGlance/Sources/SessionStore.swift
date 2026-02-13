@@ -34,7 +34,7 @@ final class SessionStore {
 
     var countsByStatus: [StatusCount] {
         let counts = Dictionary(grouping: sessions, by: { $0.status })
-        return [SessionStatus.busy, .waiting, .idle, .disconnected].compactMap { status in
+        return [SessionStatus.busy, .waiting, .idle].compactMap { status in
             guard let count = counts[status]?.count, count > 0 else { return nil }
             return StatusCount(status: status, count: count)
         }
@@ -67,8 +67,7 @@ final class SessionStore {
         guard result == 0 || (result == -1 && errno == EPERM) else {
             return false
         }
-        if let tty = json["tty"] as? String, !tty.isEmpty, tty != "??",
-           tty.allSatisfy({ $0.isLetter || $0.isNumber }) {
+        if let tty = json["tty"] as? String, tty.isValidTTY {
             return Darwin.access("/dev/\(tty)", F_OK) == 0
         }
         return true
@@ -108,7 +107,7 @@ final class SessionStore {
                 continue
             }
 
-            let status = SessionStatus(rawValue: statusStr) ?? .disconnected
+            guard let status = SessionStatus(rawValue: statusStr) else { continue }
             let pid = Int32(json["pid"] as? Int ?? 0)
             let tty = json["tty"] as? String ?? ""
             let contextPct = (try? String(contentsOf: ctxFile, encoding: .utf8))
