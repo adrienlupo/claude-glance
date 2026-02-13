@@ -2,8 +2,6 @@ import SwiftUI
 
 struct SessionDetailView: View {
     let store: SessionStore
-    @State private var pulsing = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Divider()
@@ -18,9 +16,8 @@ struct SessionDetailView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(session.status == .busy && pulsing ? Color(red: 1.0, green: 0.72, blue: 0.15) : session.status.color)
+                                    .fill(session.status.color)
                                     .frame(width: 6, height: 6)
-                                    .scaleEffect(session.status == .busy && pulsing ? 1.3 : 1.0)
 
                                 Text(session.projectName)
                                     .font(.system(size: 11, weight: .medium))
@@ -50,11 +47,6 @@ struct SessionDetailView: View {
             .frame(maxHeight: CGFloat(min(store.sessions.count, 5)) * 26)
         }
         .padding(.bottom, 6)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                pulsing = true
-            }
-        }
     }
 }
 
