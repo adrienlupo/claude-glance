@@ -8,6 +8,7 @@ struct SessionInfo: Identifiable {
     let timestamp: Date
     let pid: Int32
     let tty: String
+    var contextPercentage: Int?
 
     var projectName: String {
         URL(fileURLWithPath: cwd).lastPathComponent
@@ -93,19 +94,25 @@ final class SessionStore {
             let timestamp = Date(timeIntervalSince1970: ts)
             let age = now.timeIntervalSince(timestamp)
 
+            let ctxFile = sessionsDirectory.appendingPathComponent("\(sessionId).ctx")
+
             if age > 1800 {
                 try? FileManager.default.removeItem(at: file)
+                try? FileManager.default.removeItem(at: ctxFile)
                 continue
             }
 
             if !isSessionAlive(json) {
                 try? FileManager.default.removeItem(at: file)
+                try? FileManager.default.removeItem(at: ctxFile)
                 continue
             }
 
             let status = SessionStatus(rawValue: statusStr) ?? .disconnected
             let pid = Int32(json["pid"] as? Int ?? 0)
             let tty = json["tty"] as? String ?? ""
+            let contextPct = (try? String(contentsOf: ctxFile, encoding: .utf8))
+                .flatMap { Int($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
 
             let session = SessionInfo(
                 id: sessionId,
@@ -113,7 +120,8 @@ final class SessionStore {
                 status: status,
                 timestamp: timestamp,
                 pid: pid,
-                tty: tty
+                tty: tty,
+                contextPercentage: contextPct
             )
             loaded.append(session)
             monitorProcess(session)
@@ -148,7 +156,9 @@ final class SessionStore {
         if let index = sessions.firstIndex(where: { $0.id == sessionId }) {
             sessions.remove(at: index)
             let file = sessionsDirectory.appendingPathComponent("\(sessionId).json")
+            let ctxFile = sessionsDirectory.appendingPathComponent("\(sessionId).ctx")
             try? FileManager.default.removeItem(at: file)
+            try? FileManager.default.removeItem(at: ctxFile)
         }
     }
 

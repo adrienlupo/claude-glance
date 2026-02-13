@@ -40,6 +40,7 @@ for f in "$DIR"/*.json; do
 done
 
 umask 077
-jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" --argjson pid "$PID" --arg tty "$TTY" \
+jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" \
+    --argjson pid "$PID" --arg tty "$TTY" \
     '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$TMP"
 mv "$TMP" "$TARGET"

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SessionDetailView: View {
     let store: SessionStore
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Divider()
@@ -28,9 +27,7 @@ struct SessionDetailView: View {
 
                                 Spacer()
 
-                                Text(session.status.label)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
+                                ContextBar(percentage: session.contextPercentage)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 4)
@@ -50,5 +47,43 @@ struct SessionDetailView: View {
             .frame(maxHeight: CGFloat(min(store.sessions.count, 5)) * 26)
         }
         .padding(.bottom, 6)
+    }
+}
+
+private struct ContextBar: View {
+    let percentage: Int?
+
+    private static let barWidth: CGFloat = 60
+    private static let colorRed = Color(red: 1.0, green: 0.271, blue: 0.227)
+    private static let colorYellow = Color(red: 0.988, green: 0.816, blue: 0.145)
+    private static let colorGreen = Color(red: 0.204, green: 0.780, blue: 0.349)
+
+    private var barColor: Color {
+        guard let pct = percentage else { return .clear }
+        switch pct {
+        case 80...: return Self.colorRed
+        case 50..<80: return Self.colorYellow
+        default: return Self.colorGreen
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(Color.primary.opacity(0.12))
+                    .frame(width: Self.barWidth, height: 3)
+                if let pct = percentage, pct > 0 {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(barColor)
+                        .frame(width: Self.barWidth * CGFloat(min(pct, 100)) / 100, height: 3)
+                }
+            }
+
+            Text(percentage.map { "\($0)%" } ?? "")
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .trailing)
+        }
     }
 }

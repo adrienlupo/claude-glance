@@ -46,6 +46,22 @@ Claude Glance relies on Claude Code hooks to track session status. Add the follo
 
 If you already have hooks configured, merge these entries into your existing `hooks` object.
 
+## Statusline Setup
+
+To display context window usage in the session detail view, add the following to your `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash $HOME/.claude-glance/hooks/statusline.sh"
+  }
+}
+```
+
+If you already have a statusline configured, integrate the context tracking into your existing script.
+
+
 ### What each hook does
 
 | Event | Status set |
