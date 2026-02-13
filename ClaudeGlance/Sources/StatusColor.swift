@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum WidgetState {
+    case empty
+    case collapsed
+    case expanded
+}
+
 enum SessionStatus: String, Codable, Hashable {
     case idle
     case busy

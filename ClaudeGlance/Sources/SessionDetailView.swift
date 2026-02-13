@@ -9,7 +9,7 @@ struct SessionDetailView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(store.sessions) { session in
                         Button {
