@@ -1,11 +1,5 @@
 import SwiftUI
 
-enum WidgetState {
-    case empty
-    case collapsed
-    case expanded
-}
-
 enum SessionStatus: String, Codable, Hashable {
     case idle
     case busy
@@ -28,10 +22,6 @@ enum SessionStatus: String, Codable, Hashable {
         case .waiting: Color(red: 1.0, green: 0.271, blue: 0.227)
         case .disconnected: Color(red: 0.557, green: 0.557, blue: 0.576)
         }
-    }
-
-    var nsColor: NSColor {
-        NSColor(color)
     }
 
     var priority: Int {

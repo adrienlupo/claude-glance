@@ -2,6 +2,24 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
+private enum PanelLayout {
+    static let headerHeight: CGFloat = 36
+    static let pillCornerRadius: CGFloat = 18
+    static let expandedCornerRadius: CGFloat = 12
+    static let expandedWidth: CGFloat = 280
+    static let rowHeight: CGFloat = 26
+    static let detailPadding: CGFloat = 16
+    static let minCollapsedWidth: CGFloat = 60
+    // Collapsed width: logo padding + logo + (count per status * dot+number width) + trailing
+    static let collapsedBasePadding: CGFloat = 20 + 20 + 10
+    static let collapsedPerStatusWidth: CGFloat = 30
+}
+
+private enum MenuBarColors {
+    static let active = NSColor(red: 0.82, green: 0.45, blue: 0.18, alpha: 1.0)
+    static let inactive = NSColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1.0)
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: FloatingPanel!
     private var statusItem: NSStatusItem!
@@ -31,7 +49,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupStatusItem()
         updateStatusItemColor()
-        startObservingStatus()
     }
 
     private func setupStatusItem() {
@@ -93,22 +110,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func startObservingStatus() {
-        withObservationTracking {
-            _ = store.worstStatus
-        } onChange: {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateStatusItemColor()
-                self?.startObservingStatus()
-            }
-        }
-    }
-
     private func updateStatusItemColor() {
         guard let button = statusItem?.button else { return }
         let color: NSColor = panel.isVisible
-            ? NSColor(red: 0.82, green: 0.45, blue: 0.18, alpha: 1.0)
-            : NSColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1.0)
+            ? MenuBarColors.active
+            : MenuBarColors.inactive
         button.image = makeStatusIcon(color: color)
     }
 
@@ -139,17 +145,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updatePanelSize(state: WidgetState) {
+        let h = PanelLayout.headerHeight
         switch state {
         case .empty:
-            panel.updateSize(width: 36, height: 36, cornerRadius: 18)
+            panel.updateSize(width: h, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .collapsed:
-            let statusCount = store.countsByStatus.count
-            let width = max(CGFloat(60), CGFloat(20 + 20 + statusCount * 30 + 10))
-            panel.updateSize(width: width, height: 36, cornerRadius: 18)
+            let statusCount = CGFloat(store.countsByStatus.count)
+            let width = max(PanelLayout.minCollapsedWidth,
+                            PanelLayout.collapsedBasePadding + statusCount * PanelLayout.collapsedPerStatusWidth)
+            panel.updateSize(width: width, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .expanded:
-            let rows = min(store.sessions.count, 5)
-            let detailHeight = CGFloat(rows) * 26 + 16
-            panel.updateSize(width: 280, height: 36 + detailHeight, cornerRadius: 12)
+            let rows = CGFloat(min(store.sessions.count, 5))
+            let detailHeight = rows * PanelLayout.rowHeight + PanelLayout.detailPadding
+            panel.updateSize(width: PanelLayout.expandedWidth, height: h + detailHeight,
+                             cornerRadius: PanelLayout.expandedCornerRadius)
         }
     }
 }

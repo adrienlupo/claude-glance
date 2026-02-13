@@ -31,12 +31,6 @@ final class SessionStore {
     private var healthCheckTimer: DispatchSourceTimer?
     private var debounceWork: DispatchWorkItem?
 
-    var worstStatus: SessionStatus {
-        sessions
-            .max(by: { $0.status.priority < $1.status.priority })?
-            .status ?? .disconnected
-    }
-
     var countsByStatus: [StatusCount] {
         let counts = Dictionary(grouping: sessions, by: { $0.status })
         return [SessionStatus.busy, .waiting, .idle, .disconnected].compactMap { status in

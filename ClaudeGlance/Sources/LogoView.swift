@@ -3,16 +3,21 @@ import SwiftUI
 struct LogoView: View {
     let isActive: Bool
 
+    private static let activeImage = loadImage(named: "logo-orange")
+    private static let inactiveImage = loadImage(named: "logo-grey")
+
     var body: some View {
-        if let nsImage = NSImage(contentsOf: imageURL) {
+        if let nsImage = isActive ? Self.activeImage : Self.inactiveImage {
             Image(nsImage: nsImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
         }
     }
 
-    private var imageURL: URL {
-        let name = isActive ? "logo-orange" : "logo-grey"
-        return Bundle.module.url(forResource: name, withExtension: "png")!
+    private static func loadImage(named name: String) -> NSImage? {
+        guard let url = Bundle.module.url(forResource: name, withExtension: "png") else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
     }
 }
