@@ -21,6 +21,8 @@ run: bundle
 	mkdir -p $(INSTALL_DIR)/hooks
 	cp hooks/hook.sh $(INSTALL_DIR)/hooks/
 	chmod +x $(INSTALL_DIR)/hooks/hook.sh
+	cp hooks/statusline.sh $(INSTALL_DIR)/hooks/
+	chmod +x $(INSTALL_DIR)/hooks/statusline.sh
 	open $(APP_BUNDLE)
 
 install: bundle
@@ -29,7 +31,8 @@ install: bundle
 	@echo "Installed ClaudeGlance.app to /Applications/"
 	cp hooks/hook.sh $(INSTALL_DIR)/hooks/
 	chmod +x $(INSTALL_DIR)/hooks/hook.sh
-	bash hooks/install.sh
+	cp hooks/statusline.sh $(INSTALL_DIR)/hooks/
+	chmod +x $(INSTALL_DIR)/hooks/statusline.sh
 	@echo ""
 
 clean:

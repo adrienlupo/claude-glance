@@ -8,6 +8,7 @@ struct SessionInfo: Identifiable {
     let timestamp: Date
     let pid: Int32
     let tty: String
+    var contextPercentage: Int?
 
     var projectName: String {
         URL(fileURLWithPath: cwd).lastPathComponent
@@ -106,6 +107,7 @@ final class SessionStore {
             let status = SessionStatus(rawValue: statusStr) ?? .disconnected
             let pid = Int32(json["pid"] as? Int ?? 0)
             let tty = json["tty"] as? String ?? ""
+            let contextPct = json["context_pct"] as? Int
 
             let session = SessionInfo(
                 id: sessionId,
@@ -113,7 +115,8 @@ final class SessionStore {
                 status: status,
                 timestamp: timestamp,
                 pid: pid,
-                tty: tty
+                tty: tty,
+                contextPercentage: contextPct
             )
             loaded.append(session)
             monitorProcess(session)

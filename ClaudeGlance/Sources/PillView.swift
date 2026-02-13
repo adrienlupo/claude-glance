@@ -3,7 +3,7 @@ import SwiftUI
 struct PillView: View {
     let store: SessionStore
     @Binding var widgetState: WidgetState
-    @State private var pulseOpacity: Double = 1.0
+    @State private var pulsing = false
     var onHidePanel: (() -> Void)?
 
     var body: some View {
@@ -57,11 +57,11 @@ struct PillView: View {
                     .frame(width: 20, height: 20)
 
                 ForEach(store.countsByStatus) { item in
-                    HStack(spacing: 3) {
+                    HStack(spacing: 5) {
                         Circle()
-                            .fill(item.status.color)
+                            .fill(item.status == .busy && pulsing ? Color(red: 1.0, green: 0.72, blue: 0.15) : item.status.color)
                             .frame(width: 8, height: 8)
-                            .opacity(item.status == .busy ? pulseOpacity : 1.0)
+                            .scaleEffect(item.status == .busy && pulsing ? 1.3 : 1.0)
                         Text("\(item.count)")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.primary)
@@ -70,9 +70,8 @@ struct PillView: View {
             }
             .padding(.horizontal, 10)
             .onAppear {
-                pulseOpacity = 1.0
-                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                    pulseOpacity = 0.4
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    pulsing = true
                 }
             }
         }

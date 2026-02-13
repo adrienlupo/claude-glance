@@ -40,6 +40,19 @@ for f in "$DIR"/*.json; do
 done
 
 umask 077
-jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" --argjson pid "$PID" --arg tty "$TTY" \
-    '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$TMP"
+
+OLD_PCT=""
+if [ "$EVENT" != "SessionStart" ] && [ -f "$TARGET" ]; then
+    OLD_PCT=$(jq -r '.context_pct // empty' "$TARGET" 2>/dev/null)
+fi
+
+if [ -n "$OLD_PCT" ]; then
+    jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" \
+        --argjson pid "$PID" --arg tty "$TTY" --argjson context_pct "$OLD_PCT" \
+        '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty, context_pct: $context_pct}' > "$TMP"
+else
+    jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" \
+        --argjson pid "$PID" --arg tty "$TTY" \
+        '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$TMP"
+fi
 mv "$TMP" "$TARGET"
