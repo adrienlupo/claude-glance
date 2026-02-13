@@ -24,10 +24,6 @@ enum SessionStatus: String, Codable, Hashable {
         }
     }
 
-    var nsColor: NSColor {
-        NSColor(color)
-    }
-
     var priority: Int {
         switch self {
         case .waiting: 3

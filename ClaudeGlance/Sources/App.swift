@@ -2,6 +2,24 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
+private enum PanelLayout {
+    static let headerHeight: CGFloat = 36
+    static let pillCornerRadius: CGFloat = 18
+    static let expandedCornerRadius: CGFloat = 12
+    static let expandedWidth: CGFloat = 280
+    static let rowHeight: CGFloat = 26
+    static let detailPadding: CGFloat = 16
+    static let minCollapsedWidth: CGFloat = 60
+    // Collapsed width: logo padding + logo + (count per status * dot+number width) + trailing
+    static let collapsedBasePadding: CGFloat = 20 + 20 + 10
+    static let collapsedPerStatusWidth: CGFloat = 30
+}
+
+private enum MenuBarColors {
+    static let active = NSColor(red: 0.82, green: 0.45, blue: 0.18, alpha: 1.0)
+    static let inactive = NSColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1.0)
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: FloatingPanel!
     private var statusItem: NSStatusItem!
@@ -9,17 +27,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var iconCache: [NSColor: NSImage] = [:]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let initialState: WidgetState = store.sessions.isEmpty ? .empty : .collapsed
+
         let contentView = NSHostingView(
-            rootView: PillContentView(store: store) { [weak self] expanded in
-                self?.updatePanelSize(expanded: expanded)
-            }
+            rootView: PillContentView(
+                store: store,
+                initialState: initialState,
+                onStateChange: { [weak self] state in
+                    self?.updatePanelSize(state: state)
+                },
+                onHidePanel: { [weak self] in
+                    self?.panel.orderOut(nil)
+                    self?.updateStatusItemColor()
+                }
+            )
         )
 
         panel = FloatingPanel(contentView: contentView)
         panel.orderFront(nil)
+        updatePanelSize(state: initialState)
 
         setupStatusItem()
-        startObservingStatus()
+        updateStatusItemColor()
     }
 
     private func setupStatusItem() {
@@ -81,73 +110,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func startObservingStatus() {
-        withObservationTracking {
-            _ = store.worstStatus
-        } onChange: {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateStatusItemColor()
-                self?.startObservingStatus()
-            }
-        }
-    }
-
     private func updateStatusItemColor() {
         guard let button = statusItem?.button else { return }
-        button.image = makeStatusIcon(color: store.worstStatus.nsColor)
+        let color: NSColor = panel.isVisible
+            ? MenuBarColors.active
+            : MenuBarColors.inactive
+        button.image = makeStatusIcon(color: color)
     }
 
     private func makeStatusIcon(color: NSColor) -> NSImage {
         if let cached = iconCache[color] { return cached }
-        let size: CGFloat = 18
-        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
-            let center = CGPoint(x: size / 2, y: size / 2)
-            let rayCount = 6
-            let innerRadius: CGFloat = 1.8
-            let outerRadius: CGFloat = 7.0
-            let rayWidth: CGFloat = 1.8
-            let dotRadius: CGFloat = 1.4
+        guard let logoURL = Bundle.module.url(forResource: "logo-orange", withExtension: "png"),
+              let baseImage = NSImage(contentsOf: logoURL) else { return NSImage() }
 
-            color.setFill()
-
-            // Central dot
-            NSBezierPath(ovalIn: NSRect(
-                x: center.x - innerRadius,
-                y: center.y - innerRadius,
-                width: innerRadius * 2,
-                height: innerRadius * 2
-            )).fill()
-
-            // Rays with end dots
-            for i in 0..<rayCount {
-                let angle = CGFloat(i) * (.pi * 2.0 / CGFloat(rayCount)) - .pi / 2
-                let startDist: CGFloat = 3.0
-                let cosA = cos(angle)
-                let sinA = sin(angle)
-
-                let startX = center.x + cosA * startDist
-                let startY = center.y + sinA * startDist
-                let endX = center.x + cosA * outerRadius
-                let endY = center.y + sinA * outerRadius
-
-                let perpX = -sinA * (rayWidth / 2)
-                let perpY = cosA * (rayWidth / 2)
-
-                let ray = NSBezierPath()
-                ray.move(to: NSPoint(x: startX + perpX, y: startY + perpY))
-                ray.line(to: NSPoint(x: endX + perpX, y: endY + perpY))
-                ray.line(to: NSPoint(x: endX - perpX, y: endY - perpY))
-                ray.line(to: NSPoint(x: startX - perpX, y: startY - perpY))
-                ray.close()
-                ray.fill()
-
-                NSBezierPath(ovalIn: NSRect(
-                    x: endX - dotRadius,
-                    y: endY - dotRadius,
-                    width: dotRadius * 2,
-                    height: dotRadius * 2
-                )).fill()
-            }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            baseImage.draw(in: rect)
+            color.set()
+            rect.fill(using: .sourceAtop)
             return true
         }
         image.isTemplate = false
@@ -161,28 +141,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             panel.orderFront(nil)
         }
+        updateStatusItemColor()
     }
 
-    private func updatePanelSize(expanded: Bool) {
-        if expanded {
-            let rows = min(store.sessions.count, 5)
-            let detailHeight = CGFloat(rows) * 26 + 16
-            panel.updateSize(width: 300, height: 36 + detailHeight)
-        } else {
-            panel.updateSize(width: 300, height: 36)
+    private func updatePanelSize(state: WidgetState) {
+        let h = PanelLayout.headerHeight
+        switch state {
+        case .empty:
+            panel.updateSize(width: h, height: h, cornerRadius: PanelLayout.pillCornerRadius)
+        case .collapsed:
+            let statusCount = CGFloat(store.countsByStatus.count)
+            let width = max(PanelLayout.minCollapsedWidth,
+                            PanelLayout.collapsedBasePadding + statusCount * PanelLayout.collapsedPerStatusWidth)
+            panel.updateSize(width: width, height: h, cornerRadius: PanelLayout.pillCornerRadius)
+        case .expanded:
+            let rows = CGFloat(min(store.sessions.count, 5))
+            let detailHeight = rows * PanelLayout.rowHeight + PanelLayout.detailPadding
+            panel.updateSize(width: PanelLayout.expandedWidth, height: h + detailHeight,
+                             cornerRadius: PanelLayout.expandedCornerRadius)
         }
     }
 }
 
 struct PillContentView: View {
     let store: SessionStore
-    var onExpandChange: (Bool) -> Void
-    @State private var isExpanded = false
+    var onStateChange: (WidgetState) -> Void
+    var onHidePanel: (() -> Void)?
+    @State private var widgetState: WidgetState
+
+    init(
+        store: SessionStore,
+        initialState: WidgetState = .empty,
+        onStateChange: @escaping (WidgetState) -> Void,
+        onHidePanel: (() -> Void)? = nil
+    ) {
+        self.store = store
+        self._widgetState = State(initialValue: initialState)
+        self.onStateChange = onStateChange
+        self.onHidePanel = onHidePanel
+    }
 
     var body: some View {
-        PillView(store: store, isExpanded: $isExpanded)
-            .onChange(of: isExpanded) { _, newValue in
-                onExpandChange(newValue)
+        PillView(store: store, widgetState: $widgetState, onHidePanel: onHidePanel)
+            .onChange(of: widgetState) { _, newValue in
+                onStateChange(newValue)
+            }
+            .onChange(of: store.countsByStatus.count) { _, _ in
+                if widgetState == .collapsed {
+                    onStateChange(widgetState)
+                }
+            }
+            .onChange(of: store.sessions.count) { _, _ in
+                if widgetState == .expanded {
+                    onStateChange(widgetState)
+                }
             }
     }
 }
