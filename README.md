@@ -61,6 +61,7 @@ To display context window usage in the session detail view, add the following to
 
 If you already have a statusline configured, integrate the context tracking into your existing script.
 
+
 ### What each hook does
 
 | Event | Status set |
