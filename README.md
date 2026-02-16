@@ -5,26 +5,9 @@ A macOS menu bar app that shows the real-time status of your Claude Code session
 ## Prerequisites
 
 - macOS 14+ (Sonoma) on Apple Silicon
-- [jq](https://jqlang.github.io/jq/) (used by the hook script)
-  ```
-  brew install jq
-  ```
+- [jq](https://jqlang.github.io/jq/download/) (used by the hook script)
 
 ## Installation
-
-### Homebrew
-
-```bash
-brew install --cask adrienlupo/tap/claude-glance
-```
-
-Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
-
-```bash
-xattr -cr /Applications/ClaudeGlance.app
-```
-
-### From source
 
 ```bash
 git clone https://github.com/adrienlupo/claude-glance.git
@@ -32,7 +15,13 @@ cd claude-glance
 make install
 ```
 
-Both methods install `ClaudeGlance.app` to `/Applications/` and hook scripts to `~/.claude-glance/hooks/`.
+This installs `ClaudeGlance.app` to `/Applications/` and hook scripts to `~/.claude-glance/hooks/`.
+
+Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
+
+```bash
+xattr -cr /Applications/ClaudeGlance.app
+```
 
 ## Hook Setup
 
@@ -92,9 +81,7 @@ If you already have a statusline configured, integrate the context tracking into
 
 1. Remove the hook entries from `~/.claude/settings.json`
 2. Remove the app:
-   - **Homebrew:** `brew uninstall claude-glance`
-   - **Manual:**
-     ```bash
-     rm -rf /Applications/ClaudeGlance.app
-     rm -rf ~/.claude-glance
-     ```
+   ```bash
+   rm -rf /Applications/ClaudeGlance.app
+   rm -rf ~/.claude-glance
+   ```
