@@ -15,6 +15,7 @@ bundle: build
 	cp ClaudeGlance/Resources/Info.plist $(APP_BUNDLE)/Contents/
 	cp $(BINARY) $(APP_BUNDLE)/Contents/MacOS/
 	cp ClaudeGlance/Resources/AppIcon.icns $(APP_BUNDLE)/Contents/Resources/
+	cp ClaudeGlance/Sources/Resources/*.png $(APP_BUNDLE)/Contents/Resources/
 	codesign --force --sign - $(APP_BUNDLE)
 
 run: bundle
