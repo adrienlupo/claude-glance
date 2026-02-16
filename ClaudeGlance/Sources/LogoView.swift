@@ -15,7 +15,7 @@ struct LogoView: View {
     }
 
     private static func loadImage(named name: String) -> NSImage? {
-        guard let url = Bundle.module.url(forResource: name, withExtension: "png") else {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png") else {
             return nil
         }
         return NSImage(contentsOf: url)

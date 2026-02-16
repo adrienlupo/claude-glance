@@ -121,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeStatusIcon(color: NSColor) -> NSImage {
         if let cached = iconCache[color] { return cached }
-        guard let logoURL = Bundle.module.url(forResource: "logo-orange", withExtension: "png"),
+        guard let logoURL = Bundle.main.url(forResource: "logo-orange", withExtension: "png"),
               let baseImage = NSImage(contentsOf: logoURL) else { return NSImage() }
 
         let size = NSSize(width: 18, height: 18)
