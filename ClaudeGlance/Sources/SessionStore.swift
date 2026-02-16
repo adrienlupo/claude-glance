@@ -23,6 +23,10 @@ struct StatusCount: Identifiable {
 
 @Observable
 final class SessionStore {
+    private static let sessionExpiryInterval: TimeInterval = 1800
+    private static let debounceDelay: TimeInterval = 0.2
+    private static let healthCheckInterval: DispatchTimeInterval = .milliseconds(500)
+
     var sessions: [SessionInfo] = []
 
     private let sessionsDirectory: URL
@@ -95,7 +99,7 @@ final class SessionStore {
 
             let ctxFile = sessionsDirectory.appendingPathComponent("\(sessionId).ctx")
 
-            if age > 1800 {
+            if age > Self.sessionExpiryInterval {
                 try? FileManager.default.removeItem(at: file)
                 try? FileManager.default.removeItem(at: ctxFile)
                 continue
@@ -178,7 +182,7 @@ final class SessionStore {
                 self?.loadSessions()
             }
             self.debounceWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.debounceDelay, execute: work)
         }
 
         dispatchSource?.setCancelHandler { [weak self] in
@@ -192,7 +196,7 @@ final class SessionStore {
 
     private func startHealthCheck() {
         let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now() + 1, repeating: .milliseconds(500))
+        timer.schedule(deadline: .now() + 1, repeating: Self.healthCheckInterval)
         timer.setEventHandler { [weak self] in
             guard let self else { return }
             for i in (0..<self.sessions.count).reversed() {

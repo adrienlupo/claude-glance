@@ -44,7 +44,7 @@ struct SessionDetailView: View {
                     }
                 }
             }
-            .frame(maxHeight: CGFloat(min(store.sessions.count, 5)) * 26)
+            .frame(maxHeight: CGFloat(min(store.sessions.count, PanelLayout.maxVisibleRows)) * 26)
         }
         .padding(.bottom, 6)
     }
@@ -54,16 +54,14 @@ private struct ContextBar: View {
     let percentage: Int?
 
     private static let barWidth: CGFloat = 60
-    private static let colorRed = Color(red: 1.0, green: 0.271, blue: 0.227)
     private static let colorYellow = Color(red: 0.988, green: 0.816, blue: 0.145)
-    private static let colorGreen = Color(red: 0.204, green: 0.780, blue: 0.349)
 
     private var barColor: Color {
         guard let pct = percentage else { return .clear }
         switch pct {
-        case 80...: return Self.colorRed
+        case 80...: return SessionStatus.waiting.color
         case 50..<80: return Self.colorYellow
-        default: return Self.colorGreen
+        default: return SessionStatus.idle.color
         }
     }
 

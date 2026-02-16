@@ -10,7 +10,7 @@ enum ITerm {
         ).first != nil else { return }
 
         let devicePath = "/dev/\(tty)"
-        let script = """
+        let source = """
             tell application "iTerm2"
                 repeat with w in windows
                     repeat with t in tabs of w
@@ -25,13 +25,9 @@ enum ITerm {
             end tell
             """
         DispatchQueue.global(qos: .userInitiated).async {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            process.arguments = ["-e", script]
-            process.standardOutput = FileHandle.nullDevice
-            process.standardError = FileHandle.nullDevice
-            try? process.run()
-            process.waitUntilExit()
+            let script = NSAppleScript(source: source)
+            var error: NSDictionary?
+            script?.executeAndReturnError(&error)
         }
     }
 }

@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-private enum PanelLayout {
+enum PanelLayout {
     static let headerHeight: CGFloat = 36
     static let pillCornerRadius: CGFloat = 18
     static let expandedCornerRadius: CGFloat = 12
@@ -10,6 +10,7 @@ private enum PanelLayout {
     static let rowHeight: CGFloat = 26
     static let detailPadding: CGFloat = 16
     static let minCollapsedWidth: CGFloat = 60
+    static let maxVisibleRows = 5
     // Collapsed width: logo padding + logo + (count per status * dot+number width) + trailing
     static let collapsedBasePadding: CGFloat = 20 + 20 + 10
     static let collapsedPerStatusWidth: CGFloat = 30
@@ -155,7 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                             PanelLayout.collapsedBasePadding + statusCount * PanelLayout.collapsedPerStatusWidth)
             panel.updateSize(width: width, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .expanded:
-            let rows = CGFloat(min(store.sessions.count, 5))
+            let rows = CGFloat(min(store.sessions.count, PanelLayout.maxVisibleRows))
             let detailHeight = rows * PanelLayout.rowHeight + PanelLayout.detailPadding
             panel.updateSize(width: PanelLayout.expandedWidth, height: h + detailHeight,
                              cornerRadius: PanelLayout.expandedCornerRadius)

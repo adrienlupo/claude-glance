@@ -4,7 +4,7 @@ A macOS menu bar app that shows the real-time status of your Claude Code session
 
 ## Prerequisites
 
-- macOS
+- macOS 14+ (Sonoma) on Apple Silicon
 - [jq](https://jqlang.github.io/jq/) (used by the hook script)
   ```
   brew install jq
@@ -12,11 +12,21 @@ A macOS menu bar app that shows the real-time status of your Claude Code session
 
 ## Installation
 
+### Homebrew
+
 ```bash
+brew install --cask adrienlupo/tap/claude-glance
+```
+
+### From source
+
+```bash
+git clone https://github.com/adrienlupo/claude-glance.git
+cd claude-glance
 make install
 ```
 
-This builds the Swift app, copies it to `/Applications/`, and installs the hook script to `~/.claude-glance/hooks/`.
+Both methods install `ClaudeGlance.app` to `/Applications/` and hook scripts to `~/.claude-glance/hooks/`.
 
 ## Hook Setup
 
@@ -75,8 +85,10 @@ If you already have a statusline configured, integrate the context tracking into
 ## Uninstall
 
 1. Remove the hook entries from `~/.claude/settings.json`
-2. Delete the app and data:
-   ```bash
-   rm -rf /Applications/ClaudeGlance.app
-   rm -rf ~/.claude-glance
-   ```
+2. Remove the app:
+   - **Homebrew:** `brew uninstall claude-glance`
+   - **Manual:**
+     ```bash
+     rm -rf /Applications/ClaudeGlance.app
+     rm -rf ~/.claude-glance
+     ```

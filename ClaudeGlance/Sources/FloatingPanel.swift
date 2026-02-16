@@ -13,6 +13,12 @@ final class FloatingPanel: NSPanel {
             defer: false
         )
 
+        let cornerRadius = PanelLayout.pillCornerRadius
+        let shadowOpacity: Float = 0.25
+        let shadowRadius: CGFloat = 8
+        let shadowOffset = CGSize(width: 0, height: -2)
+        let borderOpacity: CGFloat = 0.15
+
         level = .floating
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         isMovableByWindowBackground = true
@@ -27,12 +33,12 @@ final class FloatingPanel: NSPanel {
 
         // Container view provides the shadow that follows the rounded shape
         containerView.wantsLayer = true
-        containerView.layer?.cornerRadius = 18
+        containerView.layer?.cornerRadius = cornerRadius
         containerView.layer?.cornerCurve = .continuous
         containerView.layer?.shadowColor = NSColor.black.cgColor
-        containerView.layer?.shadowOpacity = 0.25
-        containerView.layer?.shadowRadius = 8
-        containerView.layer?.shadowOffset = CGSize(width: 0, height: -2)
+        containerView.layer?.shadowOpacity = shadowOpacity
+        containerView.layer?.shadowRadius = shadowRadius
+        containerView.layer?.shadowOffset = shadowOffset
         containerView.frame = initialFrame
         containerView.autoresizingMask = [.width, .height]
 
@@ -41,11 +47,11 @@ final class FloatingPanel: NSPanel {
         visualEffectView.state = .active
         visualEffectView.blendingMode = .behindWindow
         visualEffectView.wantsLayer = true
-        visualEffectView.layer?.cornerRadius = 18
+        visualEffectView.layer?.cornerRadius = cornerRadius
         visualEffectView.layer?.cornerCurve = .continuous
         visualEffectView.layer?.masksToBounds = true
         visualEffectView.layer?.borderWidth = 0.5
-        visualEffectView.layer?.borderColor = NSColor.white.withAlphaComponent(0.15).cgColor
+        visualEffectView.layer?.borderColor = NSColor.white.withAlphaComponent(borderOpacity).cgColor
         visualEffectView.frame = initialFrame
         visualEffectView.autoresizingMask = [.width, .height]
 
