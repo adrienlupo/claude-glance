@@ -46,6 +46,9 @@ Add the following to your `~/.claude/settings.json`:
     "PreToolUse": [
       { "hooks": [{ "type": "command", "command": "bash $HOME/.claude-glance/hooks/hook.sh" }] }
     ],
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "bash $HOME/.claude-glance/hooks/hook.sh" }] }
+    ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "bash $HOME/.claude-glance/hooks/hook.sh" }] }
     ],
@@ -65,7 +68,8 @@ If you already have hooks configured, merge these entries into your existing `ho
 | `SessionStart` | **idle** -- a new session has started |
 | `UserPromptSubmit` | **busy** -- Claude is processing a prompt |
 | `PreToolUse` | **busy** -- Claude is about to use a tool |
-| `Stop` | **idle** -- Claude has finished responding |
+| `PostToolUse` | **busy** -- a tool has finished running |
+| `Stop` | **idle** -- Claude has finished responding (unless waiting) |
 | `Notification` | **waiting** -- Claude needs your attention |
 
 ## Statusline Setup

@@ -13,18 +13,54 @@ if [ -z "$SESSION_ID" ] || [ -z "$EVENT" ]; then
     exit 0
 fi
 
+TARGET="$DIR/${SESSION_ID}.json"
+LOCK="$DIR/${SESSION_ID}.lock"
+
+acquire_lock() {
+    local retries=0
+    while ! mkdir "$LOCK" 2>/dev/null; do
+        retries=$((retries + 1))
+        if [ "$retries" -gt 10 ]; then
+            local lock_mod
+            lock_mod=$(stat -f %m "$LOCK" 2>/dev/null || echo 0)
+            if [ $(( $(date +%s) - lock_mod )) -gt 2 ]; then
+                rmdir "$LOCK" 2>/dev/null && continue
+            fi
+            exit 0
+        fi
+        sleep 0.01
+    done
+}
+
+acquire_lock
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
 case "$EVENT" in
-    SessionStart)       STATUS="idle" ;;
-    UserPromptSubmit)   STATUS="busy" ;;
-    PreToolUse)         STATUS="busy" ;;
-    Stop)               STATUS="idle" ;;
-    Notification)       STATUS="waiting" ;;
-    *)                  exit 0 ;;
+    SessionStart)              STATUS="idle" ;;
+    UserPromptSubmit)          STATUS="busy" ;;
+    PreToolUse|PostToolUse)    STATUS="busy" ;;
+    Stop)
+        if [ -f "$TARGET" ]; then
+            CURRENT=$(jq -r '.status // ""' "$TARGET" 2>/dev/null)
+            if [ "$CURRENT" = "waiting" ]; then
+                exit 0
+            fi
+        fi
+        STATUS="idle" ;;
+    Notification)
+        if [ -f "$TARGET" ]; then
+            CURRENT=$(jq -r '.status // ""' "$TARGET" 2>/dev/null)
+            CURRENT_EVENT=$(jq -r '.event // ""' "$TARGET" 2>/dev/null)
+            if [ "$CURRENT" = "busy" ] && [ "$CURRENT_EVENT" = "UserPromptSubmit" ]; then
+                exit 0
+            fi
+        fi
+        STATUS="waiting" ;;
+    *)                         exit 0 ;;
 esac
 
 TS=$(date +%s)
-TMP="$DIR/${SESSION_ID}.tmp"
-TARGET="$DIR/${SESSION_ID}.json"
+TMP="$DIR/${SESSION_ID}.${$}.tmp"
 
 PID="${PPID:-0}"
 TTY=$(ps -o tty= -p "$PPID" 2>/dev/null | tr -d ' ')
@@ -41,6 +77,6 @@ done
 
 umask 077
 jq -n --arg cwd "$CWD" --arg status "$STATUS" --argjson ts "$TS" \
-    --argjson pid "$PID" --arg tty "$TTY" \
-    '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty}' > "$TMP"
+    --argjson pid "$PID" --arg tty "$TTY" --arg event "$EVENT" \
+    '{cwd: $cwd, status: $status, ts: $ts, pid: $pid, tty: $tty, event: $event}' > "$TMP"
 mv "$TMP" "$TARGET"
