@@ -18,6 +18,12 @@ A macOS menu bar app that shows the real-time status of your Claude Code session
 brew install --cask adrienlupo/tap/claude-glance
 ```
 
+Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
+
+```bash
+xattr -cr /Applications/ClaudeGlance.app
+```
+
 ### From source
 
 ```bash

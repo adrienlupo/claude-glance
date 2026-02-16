@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
 
 permissions:
   contents: write
@@ -11,17 +10,20 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: Compute version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Patch Info.plist version
         run: |
-          sed -i '' "s|<string>1.0.0</string>|<string>${{ steps.version.outputs.version }}</string>|" ClaudeGlance/Resources/Info.plist
-          sed -i '' '/<key>CFBundleVersion<\/key>/{n;s|<string>1</string>|<string>${{ steps.version.outputs.version }}</string>|;}' ClaudeGlance/Resources/Info.plist
+          BASE=$(xmllint --xpath "string(//key[.='CFBundleShortVersionString']/following-sibling::string[1])" ClaudeGlance/Resources/Info.plist)
+          echo "version=${BASE}.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Patch CFBundleVersion in Info.plist
+        run: |
+          sed -i '' '/<key>CFBundleVersion<\/key>/{n;s|<string>.*</string>|<string>${{ steps.version.outputs.version }}</string>|;}' ClaudeGlance/Resources/Info.plist
 
       - name: Build
         run: make bundle
@@ -34,9 +36,15 @@ jobs:
           cd staging
           zip -r ../ClaudeGlance-${{ steps.version.outputs.version }}-arm64.zip ClaudeGlance.app hooks/
 
+      - name: Create and push tag
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.version }}
           files: ClaudeGlance-${{ steps.version.outputs.version }}-arm64.zip
           generate_release_notes: true
 
@@ -46,7 +54,7 @@ jobs:
     steps:
       - name: Download release zip
         run: |
-          curl -L -o release.zip "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/ClaudeGlance-${GITHUB_REF_NAME#v}-arm64.zip"
+          curl -L -o release.zip "https://github.com/${{ github.repository }}/releases/download/v${{ needs.build.outputs.version }}/ClaudeGlance-${{ needs.build.outputs.version }}-arm64.zip"
 
       - name: Compute SHA256
         id: sha
@@ -61,7 +69,7 @@ jobs:
 
       - name: Update cask
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ needs.build.outputs.version }}"
           SHA="${{ steps.sha.outputs.sha256 }}"
           sed -i "s|version \".*\"|version \"${VERSION}\"|" homebrew-tap/Casks/claude-glance.rb
           sed -i "s|sha256 \".*\"|sha256 \"${SHA}\"|" homebrew-tap/Casks/claude-glance.rb
@@ -73,5 +81,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/claude-glance.rb
           git diff --cached --quiet && exit 0
-          git commit -m "Update claude-glance to ${GITHUB_REF_NAME#v}"
+          git commit -m "Update claude-glance to ${{ needs.build.outputs.version }}"
           git push
