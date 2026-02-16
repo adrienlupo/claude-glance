@@ -5,9 +5,14 @@ A macOS menu bar app that shows the real-time status of your Claude Code session
 ## Prerequisites
 
 - macOS 14+ (Sonoma) on Apple Silicon
-- [jq](https://jqlang.github.io/jq/download/) (used by the hook script)
 
 ## Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/adrienlupo/claude-glance/main/install.sh | bash
+```
+
+### From source
 
 ```bash
 git clone https://github.com/adrienlupo/claude-glance.git
@@ -15,17 +20,19 @@ cd claude-glance
 make install
 ```
 
-This installs `ClaudeGlance.app` to `/Applications/` and hook scripts to `~/.claude-glance/hooks/`.
-
 Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
 
 ```bash
 xattr -cr /Applications/ClaudeGlance.app
 ```
 
-## Hook Setup
+For local development, `make run` builds and opens the app directly from the build directory.
 
-Claude Glance relies on Claude Code hooks to track session status. Add the following to your `~/.claude/settings.json`:
+## Hook Setup (required)
+
+Claude Glance does nothing on its own -- it relies on Claude Code hooks to receive session status updates. Without this step, the app will show no activity.
+
+Add the following to your `~/.claude/settings.json`:
 
 ```json
 {
@@ -51,6 +58,16 @@ Claude Glance relies on Claude Code hooks to track session status. Add the follo
 
 If you already have hooks configured, merge these entries into your existing `hooks` object.
 
+### What each hook does
+
+| Event | Status set |
+|---|---|
+| `SessionStart` | **idle** -- a new session has started |
+| `UserPromptSubmit` | **busy** -- Claude is processing a prompt |
+| `PreToolUse` | **busy** -- Claude is about to use a tool |
+| `Stop` | **idle** -- Claude has finished responding |
+| `Notification` | **waiting** -- Claude needs your attention |
+
 ## Statusline Setup
 
 To display context window usage in the session detail view, add the following to your `~/.claude/settings.json`:
@@ -65,17 +82,6 @@ To display context window usage in the session detail view, add the following to
 ```
 
 If you already have a statusline configured, integrate the context tracking into your existing script.
-
-
-### What each hook does
-
-| Event | Status set |
-|---|---|
-| `SessionStart` | **idle** -- a new session has started |
-| `UserPromptSubmit` | **busy** -- Claude is processing a prompt |
-| `PreToolUse` | **busy** -- Claude is about to use a tool |
-| `Stop` | **idle** -- Claude has finished responding |
-| `Notification` | **waiting** -- Claude needs your attention |
 
 ## Uninstall
 
