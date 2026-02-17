@@ -2,6 +2,16 @@
 
 A macOS menu bar app that shows the real-time status of your Claude Code sessions. See at a glance whether Claude is idle, busy, or waiting for input -- without switching windows.
 
+<!-- TODO: Add demo GIF/video here -->
+
+## Features
+
+- **Always-on status** -- color-coded dots in your menu bar show each session's state at a glance
+  - Green: idle / finished | Orange: working | Red: needs your input
+- **One-click focus** -- click any session to jump straight to the right iTerm tab
+- **Context window tracking** -- see usage per session; turns yellow at 50% so you know when to compact
+- **Multi-session support** -- monitor all active Claude Code sessions from one place
+
 ## Prerequisites
 
 - macOS 14+ (Sonoma) on Apple Silicon
@@ -20,17 +30,11 @@ cd claude-glance
 make install
 ```
 
-Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
-
-```bash
-xattr -cr /Applications/ClaudeGlance.app
-```
-
 For local development, `make run` builds and opens the app directly from the build directory.
 
-## Hook Setup (required)
+## Setup
 
-Claude Glance does nothing on its own -- it relies on Claude Code hooks to receive session status updates. Without this step, the app will show no activity.
+Claude Glance integrates with Claude Code's hook system to receive session status updates. Without this step, the app will show no activity.
 
 Add the following to your `~/.claude/settings.json`:
 
@@ -61,7 +65,8 @@ Add the following to your `~/.claude/settings.json`:
 
 If you already have hooks configured, merge these entries into your existing `hooks` object.
 
-### What each hook does
+<details>
+<summary>What each hook does</summary>
 
 | Event | Status set |
 |---|---|
@@ -72,7 +77,9 @@ If you already have hooks configured, merge these entries into your existing `ho
 | `Stop` | **idle** -- Claude has finished responding (unless waiting) |
 | `Notification` | **waiting** -- Claude needs your attention |
 
-## Statusline Setup
+</details>
+
+### Context tracking
 
 To display context window usage in the session detail view, add the following to your `~/.claude/settings.json`:
 
