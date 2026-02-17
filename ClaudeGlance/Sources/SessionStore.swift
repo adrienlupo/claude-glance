@@ -70,6 +70,7 @@ final class SessionStore {
     }
 
     deinit {
+        // Safe: singleton held by AppDelegate, always deallocated on main thread at app termination
         MainActor.assumeIsolated {
             dispatchSource?.cancel()
             healthCheckTimer?.cancel()
@@ -100,7 +101,7 @@ final class SessionStore {
             at: sessionsDirectory,
             includingPropertiesForKeys: nil
         ) else {
-            Self.logger.error("Failed to list sessions directory: \(self.sessionsDirectory.path)")
+            Self.logger.error("Failed to list sessions directory: \(self.sessionsDirectory.path, privacy: .public)")
             return
         }
 
@@ -113,7 +114,7 @@ final class SessionStore {
                   let cwd = json["cwd"] as? String,
                   let statusStr = json["status"] as? String,
                   let ts = json["ts"] as? TimeInterval else {
-                Self.logger.warning("Malformed session file: \(file.lastPathComponent)")
+                Self.logger.warning("Malformed session file: \(file.lastPathComponent, privacy: .public)")
                 continue
             }
 
