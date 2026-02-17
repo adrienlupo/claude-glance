@@ -11,6 +11,7 @@ enum PanelLayout {
     static let rowHeight: CGFloat = 26
     static let detailPadding: CGFloat = 16
     static let minCollapsedWidth: CGFloat = 60
+    static let emptyPillWidth: CGFloat = 44
     static let maxVisibleRows = 5
     // Collapsed width: logo padding + logo + (count per status * dot+number width) + trailing
     static let collapsedBasePadding: CGFloat = 20 + 20 + 10
@@ -152,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let h = PanelLayout.headerHeight
         switch state {
         case .empty:
-            panel.updateSize(width: 44, height: h, cornerRadius: PanelLayout.pillCornerRadius)
+            panel.updateSize(width: PanelLayout.emptyPillWidth, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .collapsed:
             let statusCount = CGFloat(store.countsByStatus.count)
             let width = max(PanelLayout.minCollapsedWidth,
