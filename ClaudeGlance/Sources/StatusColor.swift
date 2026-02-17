@@ -5,6 +5,8 @@ enum SessionStatus: String, Codable, Hashable {
     case busy
     case waiting
 
+    static let contextWarning = Color(red: 0.988, green: 0.816, blue: 0.145)
+
     var color: Color {
         switch self {
         case .idle: Color(red: 0.204, green: 0.780, blue: 0.349)
