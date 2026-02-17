@@ -54,13 +54,12 @@ private struct ContextBar: View {
     let percentage: Int?
 
     private static let barWidth: CGFloat = 60
-    private static let colorYellow = Color(red: 0.988, green: 0.816, blue: 0.145)
 
     private var barColor: Color {
         guard let pct = percentage else { return .clear }
         switch pct {
         case 80...: return SessionStatus.waiting.color
-        case 50..<80: return Self.colorYellow
+        case 50..<80: return SessionStatus.contextWarning
         default: return SessionStatus.idle.color
         }
     }

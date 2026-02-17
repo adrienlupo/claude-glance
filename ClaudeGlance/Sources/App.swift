@@ -1,4 +1,5 @@
 import AppKit
+import os
 import ServiceManagement
 import SwiftUI
 
@@ -21,7 +22,9 @@ private enum MenuBarColors {
     static let inactive = NSColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1.0)
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let logger = Logger(subsystem: "claude-glance", category: "app")
     private var panel: FloatingPanel!
     private var statusItem: NSStatusItem!
     private let store = SessionStore()
@@ -107,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try service.register()
             }
         } catch {
-            NSLog("Launch at login toggle failed: \(error)")
+            Self.logger.error("Launch at login toggle failed: \(error)")
         }
     }
 
@@ -200,6 +203,7 @@ struct PillContentView: View {
     }
 }
 
+@MainActor
 @main
 struct ClaudeGlanceApp {
     static let appDelegate = AppDelegate()

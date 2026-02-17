@@ -1,5 +1,7 @@
+import AppKit
 import Foundation
 import Observation
+import os
 
 struct SessionInfo: Identifiable {
     let id: String
@@ -21,8 +23,10 @@ struct StatusCount: Identifiable {
     var id: String { status.rawValue }
 }
 
+@MainActor
 @Observable
 final class SessionStore {
+    private static let logger = Logger(subsystem: "claude-glance", category: "sessions")
     private static let sessionExpiryInterval: TimeInterval = 1800
     private static let debounceDelay: TimeInterval = 0.2
     private static let healthCheckInterval: DispatchTimeInterval = .milliseconds(500)
@@ -35,6 +39,7 @@ final class SessionStore {
     private var processMonitors: [String: DispatchSourceProcess] = [:]
     private var healthCheckTimer: DispatchSourceTimer?
     private var debounceWork: DispatchWorkItem?
+    private var wakeObserver: NSObjectProtocol?
 
     var countsByStatus: [StatusCount] {
         let counts = Dictionary(grouping: sessions, by: { $0.status })
@@ -54,13 +59,26 @@ final class SessionStore {
         loadSessions()
         startWatching()
         startHealthCheck()
+
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.loadSessions() }
+        }
     }
 
     deinit {
-        dispatchSource?.cancel()
-        healthCheckTimer?.cancel()
-        debounceWork?.cancel()
-        processMonitors.values.forEach { $0.cancel() }
+        MainActor.assumeIsolated {
+            dispatchSource?.cancel()
+            healthCheckTimer?.cancel()
+            debounceWork?.cancel()
+            processMonitors.values.forEach { $0.cancel() }
+            if let observer = wakeObserver {
+                NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            }
+        }
     }
 
     private func isSessionAlive(_ json: [String: Any]) -> Bool {
@@ -81,17 +99,23 @@ final class SessionStore {
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: sessionsDirectory,
             includingPropertiesForKeys: nil
-        ) else { return }
+        ) else {
+            Self.logger.error("Failed to list sessions directory: \(self.sessionsDirectory.path)")
+            return
+        }
 
         let now = Date()
         var loaded: [SessionInfo] = []
 
         for file in files where file.pathExtension == "json" {
-            guard let data = try? Data(contentsOf: file),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            guard let data = try? Data(contentsOf: file) else { continue }
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let cwd = json["cwd"] as? String,
                   let statusStr = json["status"] as? String,
-                  let ts = json["ts"] as? TimeInterval else { continue }
+                  let ts = json["ts"] as? TimeInterval else {
+                Self.logger.warning("Malformed session file: \(file.lastPathComponent)")
+                continue
+            }
 
             let sessionId = file.deletingPathExtension().lastPathComponent
             let timestamp = Date(timeIntervalSince1970: ts)
@@ -167,7 +191,10 @@ final class SessionStore {
 
     private func startWatching() {
         fileDescriptor = Darwin.open(sessionsDirectory.path, O_EVTONLY)
-        guard fileDescriptor >= 0 else { return }
+        guard fileDescriptor >= 0 else {
+            Self.logger.error("Failed to open sessions directory for watching")
+            return
+        }
 
         dispatchSource = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,

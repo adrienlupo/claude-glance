@@ -43,7 +43,7 @@ struct PillView: View {
         }
     }
 
-    @ViewBuilder
+    @MainActor @ViewBuilder
     private var pillHeader: some View {
         switch widgetState {
         case .empty:
