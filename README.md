@@ -30,14 +30,6 @@ cd claude-glance
 make install
 ```
 
-Since the app is not code-signed, macOS Gatekeeper will block it on first launch. Allow it with:
-
-```bash
-xattr -cr /Applications/ClaudeGlance.app
-```
-
-You can review the [install script](install.sh) before running it, or build from source to avoid both issues.
-
 For local development, `make run` builds and opens the app directly from the build directory.
 
 ## Setup
