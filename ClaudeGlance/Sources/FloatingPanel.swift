@@ -1,7 +1,12 @@
 import AppKit
 
+extension Notification.Name {
+    static let pillHeaderTapped = Notification.Name("pillHeaderTapped")
+}
+
 final class FloatingPanel: NSPanel {
     private let positionKey = "floatingPanelPosition"
+    private var mouseDownScreenLocation: NSPoint = .zero
     private let containerView = NSView()
     private let visualEffectView = NSVisualEffectView()
 
@@ -64,9 +69,23 @@ final class FloatingPanel: NSPanel {
         restorePosition()
     }
 
+    override func mouseDown(with event: NSEvent) {
+        mouseDownScreenLocation = NSEvent.mouseLocation
+        super.mouseDown(with: event)
+    }
+
     override func mouseUp(with event: NSEvent) {
         super.mouseUp(with: event)
         savePosition()
+
+        let upLocation = NSEvent.mouseLocation
+        let distance = hypot(upLocation.x - mouseDownScreenLocation.x,
+                             upLocation.y - mouseDownScreenLocation.y)
+        let isInHeader = event.locationInWindow.y >= frame.height - PanelLayout.headerHeight
+
+        if distance < 3 && isInHeader {
+            NotificationCenter.default.post(name: .pillHeaderTapped, object: nil)
+        }
     }
 
     func savePosition() {

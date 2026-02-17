@@ -11,16 +11,6 @@ struct PillView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .frame(height: 36)
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.spring(duration: 0.2)) {
-                        switch widgetState {
-                        case .empty, .collapsed:
-                            widgetState = .expanded
-                        case .expanded:
-                            widgetState = store.sessions.isEmpty ? .empty : .collapsed
-                        }
-                    }
-                }
 
             if widgetState == .expanded {
                 if store.sessions.isEmpty {
@@ -29,6 +19,16 @@ struct PillView: View {
                 } else {
                     SessionDetailView(store: store)
                         .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pillHeaderTapped)) { _ in
+            withAnimation(.spring(duration: 0.2)) {
+                switch widgetState {
+                case .empty, .collapsed:
+                    widgetState = .expanded
+                case .expanded:
+                    widgetState = store.sessions.isEmpty ? .empty : .collapsed
                 }
             }
         }
