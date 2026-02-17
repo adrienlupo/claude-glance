@@ -152,14 +152,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let h = PanelLayout.headerHeight
         switch state {
         case .empty:
-            panel.updateSize(width: h, height: h, cornerRadius: PanelLayout.pillCornerRadius)
+            panel.updateSize(width: 44, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .collapsed:
             let statusCount = CGFloat(store.countsByStatus.count)
             let width = max(PanelLayout.minCollapsedWidth,
                             PanelLayout.collapsedBasePadding + statusCount * PanelLayout.collapsedPerStatusWidth)
             panel.updateSize(width: width, height: h, cornerRadius: PanelLayout.pillCornerRadius)
         case .expanded:
-            let rows = CGFloat(min(store.sessions.count, PanelLayout.maxVisibleRows))
+            let rows = CGFloat(min(max(store.sessions.count, 1), PanelLayout.maxVisibleRows))
             let detailHeight = rows * PanelLayout.rowHeight + PanelLayout.detailPadding
             panel.updateSize(width: PanelLayout.expandedWidth, height: h + detailHeight,
                              cornerRadius: PanelLayout.expandedCornerRadius)

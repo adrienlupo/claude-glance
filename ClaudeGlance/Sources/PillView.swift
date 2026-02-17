@@ -23,8 +23,13 @@ struct PillView: View {
                 }
 
             if widgetState == .expanded {
-                SessionDetailView(store: store)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                if store.sessions.isEmpty {
+                    noSessionDetail
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    SessionDetailView(store: store)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
         }
         .contextMenu {
@@ -43,6 +48,21 @@ struct PillView: View {
         }
     }
 
+    private var noSessionDetail: some View {
+        VStack(spacing: 0) {
+            Divider()
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+
+            Text("No session")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .padding(.bottom, 6)
+        }
+    }
+
     @MainActor @ViewBuilder
     private var pillHeader: some View {
         switch widgetState {
@@ -52,7 +72,7 @@ struct PillView: View {
                 .opacity(0.7)
         case .collapsed, .expanded:
             HStack(spacing: 8) {
-                LogoView(isActive: true)
+                LogoView(isActive: !store.sessions.isEmpty)
                     .frame(width: 20, height: 20)
 
                 ForEach(store.countsByStatus) { item in
