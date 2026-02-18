@@ -15,9 +15,7 @@ struct SessionDetailView: View {
                             ITerm.focusSession(tty: session.tty)
                         } label: {
                             HStack(spacing: 8) {
-                                Circle()
-                                    .fill(session.status.color)
-                                    .frame(width: 6, height: 6)
+                                StatusShapeView(status: session.status, size: 6)
 
                                 Text(session.projectName)
                                     .font(.system(size: 11, weight: .medium))

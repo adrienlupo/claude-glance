@@ -77,9 +77,7 @@ struct PillView: View {
 
                 ForEach(store.countsByStatus) { item in
                     HStack(spacing: 3) {
-                        Circle()
-                            .fill(item.status.color)
-                            .frame(width: 8, height: 8)
+                        StatusShapeView(status: item.status, size: 8)
                         Text("\(item.count)")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.primary)
