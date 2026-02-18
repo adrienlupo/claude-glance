@@ -88,6 +88,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(launchItem)
 
+        let shapesItem = NSMenuItem(
+            title: "Use Shapes for Status",
+            action: #selector(toggleShapesForStatus),
+            keyEquivalent: ""
+        )
+        shapesItem.target = self
+        shapesItem.state = UserDefaults.standard.bool(forKey: StorageKeys.useShapesForStatus) ? .on : .off
+        menu.addItem(shapesItem)
+
         menu.addItem(.separator())
 
         let quitItem = NSMenuItem(
@@ -100,6 +109,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+
+    @objc private func toggleShapesForStatus() {
+        let current = UserDefaults.standard.bool(forKey: StorageKeys.useShapesForStatus)
+        UserDefaults.standard.set(!current, forKey: StorageKeys.useShapesForStatus)
     }
 
     @objc private func toggleLaunchAtLogin() {
