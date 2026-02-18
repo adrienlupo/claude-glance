@@ -94,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: ""
         )
         shapesItem.target = self
-        shapesItem.state = UserDefaults.standard.bool(forKey: "useShapesForStatus") ? .on : .off
+        shapesItem.state = UserDefaults.standard.bool(forKey: StorageKeys.useShapesForStatus) ? .on : .off
         menu.addItem(shapesItem)
 
         menu.addItem(.separator())
@@ -112,9 +112,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleShapesForStatus() {
-        let key = "useShapesForStatus"
-        let current = UserDefaults.standard.bool(forKey: key)
-        UserDefaults.standard.set(!current, forKey: key)
+        let current = UserDefaults.standard.bool(forKey: StorageKeys.useShapesForStatus)
+        UserDefaults.standard.set(!current, forKey: StorageKeys.useShapesForStatus)
     }
 
     @objc private func toggleLaunchAtLogin() {

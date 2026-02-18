@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SessionDetailView: View {
     let store: SessionStore
+    @AppStorage(StorageKeys.useShapesForStatus) private var useShapes = false
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Divider()
@@ -15,7 +16,7 @@ struct SessionDetailView: View {
                             ITerm.focusSession(tty: session.tty)
                         } label: {
                             HStack(spacing: 8) {
-                                StatusShapeView(status: session.status, size: 6)
+                                StatusShapeView(status: session.status, size: 6, useShapes: useShapes)
 
                                 Text(session.projectName)
                                     .font(.system(size: 11, weight: .medium))

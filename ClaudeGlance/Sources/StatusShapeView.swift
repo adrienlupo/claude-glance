@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum StorageKeys {
+    static let useShapesForStatus = "useShapesForStatus"
+}
+
 struct TriangleShape: Shape {
     func path(in rect: CGRect) -> Path {
         Path { path in
@@ -14,9 +18,9 @@ struct TriangleShape: Shape {
 struct StatusShapeView: View {
     let status: SessionStatus
     let size: CGFloat
+    let useShapes: Bool
 
-    @AppStorage("useShapesForStatus") private var useShapes = false
-
+    @ViewBuilder
     var body: some View {
         if useShapes {
             shapedIndicator
@@ -29,6 +33,7 @@ struct StatusShapeView: View {
 
     @ViewBuilder
     private var shapedIndicator: some View {
+        let triangleSize = size * 1.15
         switch status {
         case .idle:
             Circle()
@@ -37,7 +42,7 @@ struct StatusShapeView: View {
         case .busy:
             TriangleShape()
                 .fill(status.color)
-                .frame(width: size, height: size)
+                .frame(width: triangleSize, height: triangleSize)
         case .waiting:
             RoundedRectangle(cornerRadius: size * 0.15)
                 .fill(status.color)

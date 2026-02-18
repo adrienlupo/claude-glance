@@ -4,6 +4,7 @@ struct PillView: View {
     let store: SessionStore
     @Binding var widgetState: WidgetState
     var onHidePanel: (() -> Void)?
+    @AppStorage(StorageKeys.useShapesForStatus) private var useShapes = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,7 +78,7 @@ struct PillView: View {
 
                 ForEach(store.countsByStatus) { item in
                     HStack(spacing: 3) {
-                        StatusShapeView(status: item.status, size: 8)
+                        StatusShapeView(status: item.status, size: 8, useShapes: useShapes)
                         Text("\(item.count)")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(.primary)
